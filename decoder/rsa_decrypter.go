@@ -17,5 +17,9 @@ func NewRsaDecrypter(priv *rsa.PrivateKey) *RsaDecrypter {
 }
 
 func (d RsaDecrypter) Decrypt(data, nonce []byte) ([]byte, error) {
-	return rsa.DecryptOAEP(sha256.New(), rand.Reader, d.priv, data, []byte("msg"))
+	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, d.priv, data, nil)
+	if err != nil {
+		return nil, err
+	}
+	return b[len(nonce):], nil
 }

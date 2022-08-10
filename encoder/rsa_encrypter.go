@@ -4,9 +4,10 @@ import (
 	crand "crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"encoding/json"
+	"encoding/binary"
 	"math/rand"
 	"sync"
+	"time"
 )
 
 type RsaEncrypter struct {
@@ -17,26 +18,23 @@ type RsaEncrypter struct {
 }
 
 func NewRsaEncrypter(pub *rsa.PublicKey) *RsaEncrypter {
-	num := rand.Int63n(1 << 62)
-	b, _ := json.Marshal(num)
-	nonce := sha256.Sum256(b)
-	return &RsaEncrypter{
+	r:= &RsaEncrypter{
 		RWMutex: &sync.RWMutex{},
 		pub:     pub,
-		nonce:   nonce[:],
 	}
+	r.nonce = r.newNonce()
+	return r
 }
 
 func (e *RsaEncrypter) Encrypt(chunk []byte) ([]byte, error) {
 	e.RLock()
 	defer e.RUnlock()
-
 	return rsa.EncryptOAEP(
 		sha256.New(),
 		crand.Reader,
 		e.pub,
-		chunk,
-		[]byte("msg"),
+		append(e.nonce, chunk...),
+		nil,
 	)
 }
 
@@ -45,15 +43,19 @@ func (e RsaEncrypter) Nonce() []byte {
 }
 
 func (e RsaEncrypter) MaxChunkSize() int {
-	return e.pub.Size() - 66
+	return e.pub.Size() - (66 + len(e.nonce))
 }
 
 func (e *RsaEncrypter) UpdateNonce(data []byte) {
 	e.Lock()
 	defer e.Unlock()
-	b := sha256.Sum256(append(e.nonce, data...))
-	rand, _ := json.Marshal(rand.Int63n(1 << 62))
+	e.nonce = e.newNonce()
+}
 
-	b = sha256.Sum256(append(b[:], rand...))
-	e.nonce = b[:]
+func (e RsaEncrypter) newNonce() []byte {
+	rand := uint64(rand.Int63() * time.Now().UnixNano())
+
+	bs := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bs, rand)
+	return bs
 }
