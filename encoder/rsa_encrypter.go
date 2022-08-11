@@ -39,7 +39,7 @@ func (e *RsaEncrypter) Encrypt(chunk []byte) ([]byte, error) {
 }
 
 func (e RsaEncrypter) Nonce() []byte {
-	return e.nonce
+	return append([]byte{},e.nonce...)
 }
 
 func (e RsaEncrypter) MaxChunkSize() int {
