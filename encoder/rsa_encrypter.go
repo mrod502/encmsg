@@ -18,7 +18,7 @@ type RsaEncrypter struct {
 }
 
 func NewRsaEncrypter(pub *rsa.PublicKey) *RsaEncrypter {
-	r:= &RsaEncrypter{
+	r := &RsaEncrypter{
 		RWMutex: &sync.RWMutex{},
 		pub:     pub,
 	}
@@ -39,7 +39,10 @@ func (e *RsaEncrypter) Encrypt(chunk []byte) ([]byte, error) {
 }
 
 func (e RsaEncrypter) Nonce() []byte {
-	return append([]byte{},e.nonce...)
+	e.RLock()
+	defer e.RUnlock()
+	out := append([]byte{}, e.nonce...)
+	return out
 }
 
 func (e RsaEncrypter) MaxChunkSize() int {
