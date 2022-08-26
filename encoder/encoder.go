@@ -4,21 +4,25 @@ import (
 	"github.com/mrod502/encmsg/util"
 )
 
-func New(enc Encrypter, srl Serializer, encoder Serializer) *Encoder {
+// New instantiates an encoder with encrypter enc and serializer srl
+func New(enc Encrypter, srl Serializer) *Encoder {
 	return &Encoder{
 		Encrypter: enc,
 		srl:       srl,
-		encode:    encoder,
 	}
 }
 
+// Encoder is a wrapper for an Encrypter that handles serialization and deserialization of data,
+// and then chunks the serialized bytes, then encrypts them and then stores the encrypted data
+// in a Message object
 type Encoder struct {
 	Encrypter
 
-	srl    Serializer
-	encode Serializer // encodes the message
+	srl Serializer
 }
 
+// Encode serializes `val` using the defined serializer,
+// then encrypts the data with the provided encrypter
 func (e *Encoder) Encode(val interface{}) ([]byte, error) {
 	b, err := e.srl(val)
 	if err != nil {
@@ -36,7 +40,7 @@ func (e *Encoder) Encode(val interface{}) ([]byte, error) {
 		encChunks = append(encChunks, res)
 	}
 
-	out, err := e.encode(util.Message{Data: encChunks, Nonce: e.Nonce()})
+	out, err := e.srl(util.Message{Data: encChunks, Nonce: e.Nonce()})
 	if err == nil {
 		e.UpdateNonce(out)
 	}

@@ -4,20 +4,23 @@ import (
 	"github.com/mrod502/encmsg/util"
 )
 
+// Decoder takes a stream of bytes (a `Message` instance), decrypts
+// using the provided decrypter, and then deserializes the data to an
+// instance of the original object that was serialized
 type Decoder struct {
 	Decrypter
-	deser       Deserializer
-	structDeser Deserializer
+	deser Deserializer
 }
 
-func New(dec Decrypter, deser Deserializer, sdeser Deserializer) *Decoder {
+// New initializes a new Decoder
+func New(dec Decrypter, deser Deserializer) *Decoder {
 	return &Decoder{
-		Decrypter:   dec,
-		deser:       deser,
-		structDeser: sdeser,
+		Decrypter: dec,
+		deser:     deser,
 	}
 }
 
+// Decode decrypts `b` and deserializes the data to `v`
 func (d *Decoder) Decode(b []byte, v interface{}) error {
 	var msg util.Message
 	if err := d.deser(b, &msg); err != nil {
@@ -33,5 +36,5 @@ func (d *Decoder) Decode(b []byte, v interface{}) error {
 		out = append(out, decrypted...)
 	}
 
-	return d.structDeser(out, v)
+	return d.deser(out, v)
 }

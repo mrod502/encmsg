@@ -23,12 +23,12 @@ type TestStruct struct {
 
 func Decoder(key *rsa.PrivateKey) *decoder.Decoder {
 	decrypter := decoder.NewRsaDecrypter(key)
-	return decoder.New(decrypter, json.Unmarshal, json.Unmarshal)
+	return decoder.New(decrypter, json.Unmarshal)
 }
 
-func Encoder(key *rsa.PrivateKey) *encoder.Encoder {
-	encrypter := encoder.NewRsaEncrypter(&key.PublicKey)
-	return encoder.New(encrypter, json.Marshal, json.Marshal)
+func Encoder(key *rsa.PublicKey) *encoder.Encoder {
+	encrypter := encoder.NewRsaEncrypter(key)
+	return encoder.New(encrypter, json.Marshal)
 }
 
 func TestEncodeDecode(t *testing.T) {
@@ -47,7 +47,7 @@ func TestEncodeDecode(t *testing.T) {
 	}
 
 	dec := Decoder(key)
-	enc := Encoder(key)
+	enc := Encoder(&key.PublicKey)
 
 	b, err := enc.Encode(val)
 	if err != nil {
